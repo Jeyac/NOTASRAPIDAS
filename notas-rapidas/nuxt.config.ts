@@ -10,53 +10,30 @@ export default defineNuxtConfig({
     injectRegister: 'script',
     strategies: 'generateSW',
     manifest: {
-      name: 'Notas Rápidas - Aplicación de Notas',
-      short_name: 'Notas Rápidas',
-      description: 'Aplicación de notas rápida y simple desarrollada por Jéraldyn Acevedo. Funciona offline y se puede instalar como aplicación nativa.',
-      theme_color: '#FFD700',
-      background_color: '#FFFFCC',
-      display: 'standalone',
+      name: 'Notas Rápidas',
+      short_name: 'Notas',
       start_url: '/',
-      orientation: 'portrait',
-      scope: '/',
-      lang: 'es',
-      categories: ['productivity', 'utilities'],
+      display: 'standalone',
+      background_color: '#FFFFCC',
+      theme_color: '#FFD700',
       icons: [
         {
-          src: '/favicon.ico',
-          sizes: '64x64',
-          type: 'image/x-icon',
-          purpose: 'any'
-        },
-        {
-          src: '/icon-192x192.svg',
+          src: '/icon-192x192.png',
           sizes: '192x192',
-          type: 'image/svg+xml',
+          type: 'image/png',
           purpose: 'any maskable'
         },
         {
-          src: '/icon-512x512.svg',
+          src: '/icon-512x512.png',
           sizes: '512x512',
-          type: 'image/svg+xml',
-          purpose: 'any maskable'
-        },
-        {
-          src: '/favicon.svg',
-          sizes: '192x192',
-          type: 'image/svg+xml',
-          purpose: 'any maskable'
-        },
-        {
-          src: '/favicon.svg',
-          sizes: '512x512',
-          type: 'image/svg+xml',
+          type: 'image/png',
           purpose: 'any maskable'
         }
       ]
     },
     workbox: {
       globPatterns: ['**/*.{js,css,html,png,svg,ico}'],
-      navigateFallback: null,
+      navigateFallback: '/',
       runtimeCaching: [
         {
           urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
@@ -70,15 +47,48 @@ export default defineNuxtConfig({
           }
         },
         {
-          urlPattern: '/.*',
+          urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+          handler: 'CacheFirst',
+          options: {
+            cacheName: 'google-fonts-stylesheets',
+            expiration: {
+              maxEntries: 10,
+              maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
+            }
+          }
+        },
+        {
+          urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp)$/,
+          handler: 'CacheFirst',
+          options: {
+            cacheName: 'images',
+            expiration: {
+              maxEntries: 100,
+              maxAgeSeconds: 30 * 24 * 60 * 60 // 30 days
+            }
+          }
+        },
+        {
+          urlPattern: /\.(?:js|css)$/,
+          handler: 'StaleWhileRevalidate',
+          options: {
+            cacheName: 'static-resources',
+            expiration: {
+              maxEntries: 100,
+              maxAgeSeconds: 7 * 24 * 60 * 60 // 7 days
+            }
+          }
+        },
+        {
+          urlPattern: /^\/.*$/,
           handler: 'NetworkFirst',
           options: {
-            cacheName: 'notas-cache',
+            cacheName: 'pages',
             expiration: {
               maxEntries: 50,
-              maxAgeSeconds: 30 * 24 * 60 * 60 // 30 días
+              maxAgeSeconds: 24 * 60 * 60 // 1 day
             },
-            networkTimeoutSeconds: 10
+            networkTimeoutSeconds: 3
           }
         }
       ]
@@ -92,12 +102,16 @@ export default defineNuxtConfig({
   
   app: {
     head: {
-      title: 'Notas Rápidas -JA',
+      title: 'Notas Rápidas',
       meta: [
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-        { name: 'description', content: 'Aplicación de notas rápida y simple' },
+        { name: 'description', content: 'Aplicación de notas rápida y simple desarrollada por Jéraldyn Acevedo' },
         { name: 'theme-color', content: '#FFD700' }
+      ],
+      link: [
+        { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
+        { rel: 'manifest', href: '/manifest.json' }
       ]
     }
   }

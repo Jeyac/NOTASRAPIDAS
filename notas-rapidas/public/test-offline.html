@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test PWA Offline</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #FFFFCC;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .warning { background: #fff3cd; color: #856404; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        button {
+            background: #FFD700;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 5px;
+        }
+        button:hover { background: #FFC107; }
+    </style>
+</head>
+<body>
+    <h1>Test PWA Offline</h1>
+    
+    <div id="status">
+        <h2>Estado del Service Worker:</h2>
+        <div id="sw-status" class="status info">Verificando...</div>
+        <div id="cache-status" class="status info">Verificando...</div>
+        <div id="offline-status" class="status info">Verificando...</div>
+    </div>
+    
+    <div id="test-section">
+        <h2>Pruebas:</h2>
+        <button onclick="testOffline()">Probar Offline</button>
+        <button onclick="clearCache()">Limpiar Cache</button>
+        <button onclick="checkCache()">Verificar Cache</button>
+    </div>
+    
+    <div id="instructions">
+        <h2>Instrucciones:</h2>
+        <ol>
+            <li>Primero visita la aplicación principal para que se registre el Service Worker</li>
+            <li>Luego vuelve a esta página y haz click en "Probar Offline"</li>
+            <li>Activa "Offline" en DevTools → Network</li>
+            <li>Recarga la página principal - debería funcionar sin internet</li>
+        </ol>
+    </div>
+
+    <script>
+        // Verificar Service Worker
+        async function checkServiceWorker() {
+            if ('serviceWorker' in navigator) {
+                try {
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    const status = document.getElementById('sw-status');
+                    
+                    if (registrations.length > 0) {
+                        status.textContent = `Service Worker: Activo (${registrations.length} registrado${registrations.length > 1 ? 's' : ''})`;
+                        status.className = 'status success';
+                    } else {
+                        status.textContent = 'Service Worker: No registrado';
+                        status.className = 'status warning';
+                    }
+                } catch (error) {
+                    document.getElementById('sw-status').textContent = 'Service Worker: Error';
+                    document.getElementById('sw-status').className = 'status error';
+                }
+            } else {
+                document.getElementById('sw-status').textContent = 'Service Worker: No soportado';
+                document.getElementById('sw-status').className = 'status error';
+            }
+        }
+        
+        // Verificar Cache
+        async function checkCacheStatus() {
+            if ('caches' in window) {
+                try {
+                    const cacheNames = await caches.keys();
+                    const status = document.getElementById('cache-status');
+                    
+                    if (cacheNames.length > 0) {
+                        status.textContent = `Cache: ${cacheNames.length} cache${cacheNames.length > 1 ? 's' : ''} disponible${cacheNames.length > 1 ? 's' : ''}`;
+                        status.className = 'status success';
+                    } else {
+                        status.textContent = 'Cache: No hay caches';
+                        status.className = 'status warning';
+                    }
+                } catch (error) {
+                    document.getElementById('cache-status').textContent = 'Cache: Error';
+                    document.getElementById('cache-status').className = 'status error';
+                }
+            } else {
+                document.getElementById('cache-status').textContent = 'Cache: No soportado';
+                document.getElementById('cache-status').className = 'status error';
+            }
+        }
+        
+        // Verificar estado offline
+        function checkOfflineStatus() {
+            const status = document.getElementById('offline-status');
+            if (navigator.onLine) {
+                status.textContent = 'Estado: En línea';
+                status.className = 'status success';
+            } else {
+                status.textContent = 'Estado: Sin conexión';
+                status.className = 'status warning';
+            }
+        }
+        
+        // Probar offline
+        async function testOffline() {
+            const status = document.getElementById('offline-status');
+            status.textContent = 'Probando funcionalidad offline...';
+            status.className = 'status info';
+            
+            try {
+                // Intentar hacer una petición
+                const response = await fetch('/');
+                if (response.ok) {
+                    status.textContent = 'Test offline: Funcionando correctamente';
+                    status.className = 'status success';
+                } else {
+                    status.textContent = 'Test offline: Error en la respuesta';
+                    status.className = 'status error';
+                }
+            } catch (error) {
+                if (navigator.onLine) {
+                    status.textContent = 'Test offline: Error de conexión';
+                    status.className = 'status error';
+                } else {
+                    status.textContent = 'Test offline: Sin conexión (normal)';
+                    status.className = 'status warning';
+                }
+            }
+        }
+        
+        // Limpiar cache
+        async function clearCache() {
+            if ('caches' in window) {
+                try {
+                    const cacheNames = await caches.keys();
+                    await Promise.all(cacheNames.map(name => caches.delete(name)));
+                    alert('Cache limpiado correctamente');
+                    checkCacheStatus();
+                } catch (error) {
+                    alert('Error al limpiar cache: ' + error.message);
+                }
+            } else {
+                alert('Cache no soportado');
+            }
+        }
+        
+        // Verificar cache
+        async function checkCache() {
+            if ('caches' in window) {
+                try {
+                    const cacheNames = await caches.keys();
+                    let cacheInfo = `Caches encontrados: ${cacheNames.length}\n\n`;
+                    
+                    for (const name of cacheNames) {
+                        const cache = await caches.open(name);
+                        const keys = await cache.keys();
+                        cacheInfo += `${name}: ${keys.length} entradas\n`;
+                    }
+                    
+                    alert(cacheInfo);
+                } catch (error) {
+                    alert('Error al verificar cache: ' + error.message);
+                }
+            } else {
+                alert('Cache no soportado');
+            }
+        }
+        
+        // Ejecutar verificaciones
+        checkServiceWorker();
+        checkCacheStatus();
+        checkOfflineStatus();
+        
+        // Escuchar cambios de estado online/offline
+        window.addEventListener('online', checkOfflineStatus);
+        window.addEventListener('offline', checkOfflineStatus);
+        
+        // Actualizar cada 5 segundos
+        setInterval(() => {
+            checkServiceWorker();
+            checkCacheStatus();
+            checkOfflineStatus();
+        }, 5000);
+    </script>
+</body>
+</html>
+
