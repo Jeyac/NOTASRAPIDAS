@@ -1,14 +1,15 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-  compatibilityDate: '2025-07-15',
+  compatibilityDate: '2025-10-28',
   devtools: { enabled: true },
-  
+
   modules: ['@vite-pwa/nuxt'],
-  
+
   pwa: {
     registerType: 'autoUpdate',
     injectRegister: 'script',
     strategies: 'generateSW',
+
     manifest: {
       name: 'Notas Rápidas',
       short_name: 'Notas',
@@ -16,6 +17,7 @@ export default defineNuxtConfig({
       display: 'standalone',
       background_color: '#FFFFCC',
       theme_color: '#FFD700',
+      description: 'Aplicación de notas rápida y simple desarrollada por Jéraldyn Acevedo',
       icons: [
         {
           src: '/icon-192x192.png',
@@ -31,75 +33,55 @@ export default defineNuxtConfig({
         }
       ]
     },
+
     workbox: {
-      globPatterns: ['**/*.{js,css,html,png,svg,ico}'],
-      navigateFallback: '/',
+      globDirectory: '.output/public',
+      globPatterns: ['**/*.{js,css,html,png,svg,ico,json,webmanifest,woff2,woff}'],
+      cleanupOutdatedCaches: true,
+      offlineFallback: true,
       runtimeCaching: [
         {
-          urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-          handler: 'CacheFirst',
-          options: {
-            cacheName: 'google-fonts-cache',
-            expiration: {
-              maxEntries: 10,
-              maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
-            }
-          }
-        },
-        {
-          urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
-          handler: 'CacheFirst',
-          options: {
-            cacheName: 'google-fonts-stylesheets',
-            expiration: {
-              maxEntries: 10,
-              maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
-            }
-          }
-        },
-        {
-          urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp)$/,
-          handler: 'CacheFirst',
-          options: {
-            cacheName: 'images',
-            expiration: {
-              maxEntries: 100,
-              maxAgeSeconds: 30 * 24 * 60 * 60 // 30 days
-            }
-          }
-        },
-        {
-          urlPattern: /\.(?:js|css)$/,
+          urlPattern: /\.(?:js|css|html)$/i,
           handler: 'StaleWhileRevalidate',
           options: {
             cacheName: 'static-resources',
             expiration: {
               maxEntries: 100,
-              maxAgeSeconds: 7 * 24 * 60 * 60 // 7 days
+              maxAgeSeconds: 7 * 24 * 60 * 60 // 7 días
             }
           }
         },
         {
-          urlPattern: /^\/.*$/,
-          handler: 'NetworkFirst',
+          urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp)$/i,
+          handler: 'CacheFirst',
           options: {
-            cacheName: 'pages',
+            cacheName: 'images',
             expiration: {
-              maxEntries: 50,
-              maxAgeSeconds: 24 * 60 * 60 // 1 day
-            },
-            networkTimeoutSeconds: 3
+              maxEntries: 100,
+              maxAgeSeconds: 30 * 24 * 60 * 60 // 30 días
+            }
+          }
+        },
+        {
+          urlPattern: /\/fonts\/.*\.(?:woff2|woff|ttf)$/i,
+          handler: 'CacheFirst',
+          options: {
+            cacheName: 'local-fonts',
+            expiration: {
+              maxEntries: 10,
+              maxAgeSeconds: 365 * 24 * 60 * 60 // 1 año
+            }
           }
         }
       ]
     },
+
     devOptions: {
       enabled: true,
-      type: 'module',
-      navigateFallback: '/'
+      type: 'module'
     }
   },
-  
+
   app: {
     head: {
       title: 'Notas Rápidas',
@@ -111,8 +93,14 @@ export default defineNuxtConfig({
       ],
       link: [
         { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
-        { rel: 'manifest', href: '/manifest.json' }
+        { rel: 'manifest', href: '/manifest.webmanifest' },
+        { rel: 'stylesheet', href: '/fonts/local-fonts.css' }
       ]
     }
+  },
+
+  nitro: {
+    preset: 'node-server',
+    compressPublicAssets: true
   }
 })
